@@ -1,0 +1,13 @@
+{
+  "name": "purescript-conveyor-static",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "output"
+  ],
+  "dependencies": {
+    "purescript-node-http": "^4.2.0",
+    "purescript-node-fs": "^4.0.0"
+  }
+}
