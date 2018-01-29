@@ -61,13 +61,11 @@ staticHandler { root, maxAge } req res =
         else path
 
     handleInvalidMethod = do
-      setHeader res "Connection" "close"
       setHeader res "Content-Type" "text/html; charset=utf-8"
       setStatusCode res 404
       end (responseAsStream res) $ pure unit
 
     handleStat (Left err) = do
-      setHeader res "Connection" "close"
       setHeader res "Content-Type" "text/html; charset=utf-8"
       setStatusCode res
         if elem (code err) [ "ENOENT", "ENAMETOOLONG", "ENOTDIR" ]
@@ -76,9 +74,7 @@ staticHandler { root, maxAge } req res =
       end (responseAsStream res) $ pure unit
 
     handleStat (Right (Stats stats)) = do
-      setHeader res "Connection" "close"
       setHeader res "Content-Type" $ contentTypeFromPath fullPath
-      setHeader res "Content-Length" $ show stats.size
       setHeader res "Last-Modified" $ toUTCString stats.mtime
       setHeader res "Cache-Control" $ "max-age=" <> show maxAge
       setStatusCode res 200
