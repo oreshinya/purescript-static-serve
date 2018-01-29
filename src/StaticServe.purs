@@ -11,6 +11,8 @@ import Control.Monad.Eff.Exception (Error)
 import Data.Either (Either(..))
 import Data.Foldable (elem)
 import Data.JSDate (toUTCString)
+import Data.Maybe (fromMaybe)
+import Data.Nullable (toMaybe)
 import Node.FS (FS)
 import Node.FS.Async (stat)
 import Node.FS.Stats (Stats(..))
@@ -18,6 +20,7 @@ import Node.FS.Stream (createReadStream)
 import Node.HTTP (HTTP, Request, Response, requestMethod, requestURL, responseAsStream, setHeader, setStatusCode)
 import Node.Path (resolve)
 import Node.Stream (end, onError, pipe)
+import Node.URL (parse)
 import StaticServe.ContentType (contentTypeFromPath)
 
 
@@ -50,7 +53,7 @@ staticHandler { root, maxAge } req res =
     then stat fullPath handleStat
     else handleInvalidMethod
   where
-    path = requestURL req
+    path = fromMaybe "/" $ toMaybe $ _.pathname $ parse $ requestURL req
 
     fullPath = resolve [ root ] $ "." <>
       if path == "/"
