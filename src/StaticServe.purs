@@ -85,12 +85,10 @@ staticHandler { root, maxAge } req res =
         else path
 
     handleInvalidMethod = do
-      setHeader res "Content-Type" "text/html; charset=utf-8"
       setStatusCode res 404
       end (responseAsStream res) $ pure unit
 
     handleStat (Left err) = do
-      setHeader res "Content-Type" "text/html; charset=utf-8"
       setStatusCode res
         if elem (code err) [ "ENOENT", "ENAMETOOLONG", "ENOTDIR" ]
           then 404
