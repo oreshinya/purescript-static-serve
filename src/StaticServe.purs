@@ -66,18 +66,28 @@ fresh req lastModified =
         then pure false
         else pure $ getTime lastModified <= getTime ifModifiedSince
   where
-    isNoCache = maybe false includeNoCache $ requestHeader "cache-control" req
-    includeNoCache str = flip test str $ unsafeRegex "(?:^|,)\\s*?no-cache\\s*?(?:,|$)" noFlags
+    isNoCache =
+      maybe false includeNoCache $ requestHeader "cache-control" req
+    includeNoCache =
+      test $ unsafeRegex "(?:^|,)\\s*?no-cache\\s*?(?:,|$)" noFlags
 
 
 
-staticHandler :: forall e. Settings -> (Request -> Response -> Eff (http :: HTTP, fs :: FS, locale :: LOCALE | e) Unit)
+staticHandler
+  :: forall e
+   . Settings
+  -> (Request -> Response -> Eff (http :: HTTP, fs :: FS, locale :: LOCALE | e) Unit)
 staticHandler { root, maxAge } req res =
   if isHeadOrGet req
     then stat fullPath handleStat
     else handleInvalidMethod
   where
-    path = fromMaybe "/" $ toMaybe $ _.pathname $ URL.parse $ requestURL req
+    path =
+      fromMaybe "/"
+        $ toMaybe
+        $ _.pathname
+        $ URL.parse
+        $ requestURL req
 
     fullPath = resolve [ root ] $ "." <>
       if path == "/"
