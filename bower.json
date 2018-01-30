@@ -1,5 +1,22 @@
 {
-  "name": "purescript-conveyor-static",
+  "name": "purescript-static-serve",
+  "license": "MIT",
+  "homepage": "https://github.com/oreshinya/purescript-static-serve",
+  "authors": [
+    "Shinya Takahashi <s.takahashi313@gmail.com>"
+  ],
+  "description": "Serve static files",
+  "keywords": [
+    "purescript",
+    "static-server"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/oreshinya/purescript-static-serve.git"
+  },
+  "moduleType": [
+    "node"
+  ],
   "ignore": [
     "**/.*",
     "node_modules",
