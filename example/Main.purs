@@ -22,5 +22,5 @@ config =
 
 main :: forall e. Eff (fs :: FS, http :: HTTP, locale :: LOCALE | e) Unit
 main = do
-  server <- createServer $ staticHandler { root: "./public", maxAge: 60 }
+  server <- createServer $ staticHandler { root: "./public", maxAge: 60, historyAPIFallback: true }
   listen server config $ pure unit

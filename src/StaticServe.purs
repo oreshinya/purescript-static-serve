@@ -14,6 +14,7 @@ import Data.JSDate (JSDate, LOCALE, getTime, parse, toUTCString)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (toMaybe)
 import Data.StrMap (lookup)
+import Data.String (Pattern(..), indexOf, lastIndexOf)
 import Data.String.Regex (test)
 import Data.String.Regex.Flags (noFlags)
 import Data.String.Regex.Unsafe (unsafeRegex)
@@ -32,6 +33,7 @@ import StaticServe.ContentType (contentTypeFromPath)
 type Settings =
   { root :: String
   , maxAge :: Int
+  , historyAPIFallback :: Boolean
   }
 
 
@@ -73,11 +75,62 @@ fresh req lastModified =
 
 
 
+getPath :: Settings -> Request -> String
+getPath settings req = if settings.historyAPIFallback then fallbackPath else path
+  where
+    path =
+      fromMaybe "/"
+        $ toMaybe
+        $ _.pathname
+        $ URL.parse
+        $ requestURL req
+
+    fallbackPath =
+      case requestHeader "accept" req of
+        Nothing -> path
+        Just accept ->
+          if fallback accept path
+            then "/index.html"
+            else path
+
+
+
+preferJSON :: String -> Boolean
+preferJSON accept =
+  case indexOf (Pattern "application/json") accept of
+    Just 0 -> true
+    _ -> false
+
+
+
+acceptHTML :: String -> Boolean
+acceptHTML accept =
+  case indexOf (Pattern "text/html") accept, indexOf (Pattern "*/*") accept of
+    Nothing, Nothing -> false
+    _, _ -> true
+
+
+
+directFileRequest :: String -> Boolean
+directFileRequest path =
+  case lastIndexOf (Pattern ".") path, lastIndexOf (Pattern "/") path of
+    Just i1, Just i2 | i1 > i2 -> true
+    Just i1, Nothing -> true
+    _, _ -> false
+
+
+
+fallback :: String -> String -> Boolean
+fallback accept path =
+  (not $ preferJSON accept) && acceptHTML accept && (not $ directFileRequest path)
+
+
+
 staticHandler
   :: forall e
    . Settings
   -> (Request -> Response -> Eff (http :: HTTP, fs :: FS, locale :: LOCALE | e) Unit)
-staticHandler { root, maxAge } req res =
+staticHandler settings req res =
   if isHeadOrGet req
     then stat fullPath handleStat
     else handleInvalidMethod
@@ -89,10 +142,7 @@ staticHandler { root, maxAge } req res =
         $ URL.parse
         $ requestURL req
 
-    fullPath = resolve [ root ] $ "." <>
-      if path == "/"
-        then "/index.html"
-        else path
+    fullPath = resolve [ settings.root ] $ "." <> getPath settings req
 
     handleInvalidMethod = do
       setStatusCode res 404
@@ -108,7 +158,7 @@ staticHandler { root, maxAge } req res =
     handleStat (Right (Stats stats)) = do
       setHeader res "Content-Type" $ contentTypeFromPath fullPath
       setHeader res "Last-Modified" $ toUTCString stats.mtime
-      setHeader res "Cache-Control" $ "max-age=" <> show maxAge
+      setHeader res "Cache-Control" $ "max-age=" <> show settings.maxAge
       if isHead req
         then handleHead
         else handleGet stats
