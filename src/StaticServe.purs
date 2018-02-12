@@ -135,13 +135,6 @@ staticHandler settings req res =
     then stat fullPath handleStat
     else handleInvalidMethod
   where
-    path =
-      fromMaybe "/"
-        $ toMaybe
-        $ _.pathname
-        $ URL.parse
-        $ requestURL req
-
     fullPath = resolve [ settings.root ] $ "." <> getPath settings req
 
     handleInvalidMethod = do
