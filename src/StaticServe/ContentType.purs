@@ -3,9 +3,9 @@ module StaticServe.ContentType (contentTypeFromPath) where
 import Prelude
 
 import Data.Maybe (Maybe(..), maybe)
-import Data.StrMap (StrMap, fromFoldable, lookup)
 import Data.String (drop)
 import Data.Tuple (Tuple(..))
+import Foreign.Object (Object, fromFoldable, lookup)
 import Node.Path (extname)
 
 
@@ -26,7 +26,7 @@ contentTypeFromPath path =
 
 
 
-mimes :: StrMap Mime
+mimes :: Object Mime
 mimes = fromFoldable
   [ Tuple "ez" { contentType: "application/andrew-inset", charset: Nothing }
   , Tuple "aw" { contentType: "application/applixware", charset: Nothing }

@@ -2,11 +2,9 @@ module Main where
 
 import Prelude
 
-import Control.Monad.Eff (Eff)
-import Data.JSDate (LOCALE)
+import Effect (Effect)
 import Data.Maybe (Maybe(..))
-import Node.FS (FS)
-import Node.HTTP (HTTP, ListenOptions, createServer, listen)
+import Node.HTTP (ListenOptions, createServer, listen)
 import StaticServe (staticHandler)
 
 
@@ -20,7 +18,7 @@ config =
 
 
 
-main :: forall e. Eff (fs :: FS, http :: HTTP, locale :: LOCALE | e) Unit
+main :: Effect Unit
 main = do
   server <- createServer $ staticHandler { root: "./public", maxAge: 60, historyAPIFallback: true }
   listen server config $ pure unit

@@ -24,9 +24,9 @@
     "output"
   ],
   "dependencies": {
-    "purescript-node-http": "^4.2.0",
-    "purescript-node-fs": "^4.0.0",
-    "purescript-node-url": "^3.0.0",
-    "purescript-strings": "^3.4.0"
+    "purescript-node-http": "^5.0.0",
+    "purescript-node-fs": "^5.0.0",
+    "purescript-node-url": "^4.0.0",
+    "purescript-strings": "^4.0.0"
   }
 }

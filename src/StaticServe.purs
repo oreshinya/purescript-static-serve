@@ -6,23 +6,22 @@ module StaticServe
 
 import Prelude
 
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Exception (Error)
+import Effect (Effect)
+import Effect.Exception (Error)
 import Data.Either (Either(..))
 import Data.Foldable (elem)
-import Data.JSDate (JSDate, LOCALE, getTime, parse, toUTCString)
+import Data.JSDate (JSDate, getTime, parse, toUTCString)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (toMaybe)
-import Data.StrMap (lookup)
 import Data.String (Pattern(..), indexOf, lastIndexOf)
 import Data.String.Regex (test)
 import Data.String.Regex.Flags (noFlags)
 import Data.String.Regex.Unsafe (unsafeRegex)
-import Node.FS (FS)
+import Foreign.Object (lookup)
 import Node.FS.Async (stat)
 import Node.FS.Stats (Stats(..))
 import Node.FS.Stream (createReadStream)
-import Node.HTTP (HTTP, Request, Response, requestHeaders, requestMethod, requestURL, responseAsStream, setHeader, setStatusCode)
+import Node.HTTP (Request, Response, requestHeaders, requestMethod, requestURL, responseAsStream, setHeader, setStatusCode)
 import Node.Path (resolve)
 import Node.Stream (end, onError, pipe)
 import Node.URL as URL
@@ -58,7 +57,7 @@ requestHeader key req = lookup key $ requestHeaders req
 
 
 
-fresh :: forall e. Request -> JSDate -> Eff (locale :: LOCALE | e) Boolean
+fresh :: Request -> JSDate -> Effect Boolean
 fresh req lastModified =
   case requestHeader "if-modified-since" req of
     Nothing -> pure false
@@ -127,12 +126,11 @@ fallback accept path =
 
 
 staticHandler
-  :: forall e
-   . Settings
-  -> (Request -> Response -> Eff (http :: HTTP, fs :: FS, locale :: LOCALE | e) Unit)
+  :: Settings
+  -> (Request -> Response -> Effect Unit)
 staticHandler settings req res =
   if isHeadOrGet req
-    then stat fullPath handleStat
+    then fullPath >>= flip stat handleStat
     else handleInvalidMethod
   where
     fullPath = resolve [ settings.root ] $ "." <> getPath settings req
@@ -149,7 +147,8 @@ staticHandler settings req res =
       end (responseAsStream res) $ pure unit
 
     handleStat (Right (Stats stats)) = do
-      setHeader res "Content-Type" $ contentTypeFromPath fullPath
+      path <- fullPath
+      setHeader res "Content-Type" $ contentTypeFromPath path
       setHeader res "Last-Modified" $ toUTCString stats.mtime
       setHeader res "Cache-Control" $ "max-age=" <> show settings.maxAge
       if isHead req
@@ -168,6 +167,7 @@ staticHandler settings req res =
           end (responseAsStream res) $ pure unit
         else do
           setStatusCode res 200
-          readable <- createReadStream fullPath
+          path <- fullPath
+          readable <- createReadStream path
           onError readable \err -> handleStat $ Left err
           void $ pipe readable $ responseAsStream res
